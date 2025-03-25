@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "775815644930",
+    "project_id": "dairydelivery-99f70",
+    "storage_bucket": "dairydelivery-99f70.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:775815644930:android:e7d0a3b16af0f6de82241b",
+        "android_client_info": {
+          "package_name": "com.example.dairy_delivery"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAD9E3Db6jXGnDbCAVfX6Y6LLnI8t3fVGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
