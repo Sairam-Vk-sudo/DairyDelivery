@@ -59,47 +59,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDUzLmMcbWCq0kZt-SHjtbD3Hqmxf3zRKY',
-    appId: '1:775815644930:web:77a41d94f45017ea82241b',
-    messagingSenderId: '775815644930',
-    projectId: 'dairydelivery-99f70',
-    authDomain: 'dairydelivery-99f70.firebaseapp.com',
-    storageBucket: 'dairydelivery-99f70.firebasestorage.app',
+    piKey: '<FIREBASE_API_KEY>',
+    appId: '<FIREBASE_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    authDomain: '<FIREBASE_AUTH_DOMAIN>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>'
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyAD9E3Db6jXGnDbCAVfX6Y6LLnI8t3fVGk',
-    appId: '1:775815644930:android:e7d0a3b16af0f6de82241b',
-    messagingSenderId: '775815644930',
-    projectId: 'dairydelivery-99f70',
-    storageBucket: 'dairydelivery-99f70.firebasestorage.app',
+    piKey: '<FIREBASE_API_KEY>',
+    appId: '<FIREBASE_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    authDomain: '<FIREBASE_AUTH_DOMAIN>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>'
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDZx7o2qdbJI9LZUKShhP8GubaXz8cbW1E',
-    appId: '1:775815644930:ios:4236f43e68a7875f82241b',
-    messagingSenderId: '775815644930',
-    projectId: 'dairydelivery-99f70',
-    storageBucket: 'dairydelivery-99f70.firebasestorage.app',
-    iosBundleId: 'com.example.dairyDelivery',
+    piKey: '<FIREBASE_API_KEY>',
+    appId: '<FIREBASE_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    authDomain: '<FIREBASE_AUTH_DOMAIN>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>'
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDZx7o2qdbJI9LZUKShhP8GubaXz8cbW1E',
-    appId: '1:775815644930:ios:4236f43e68a7875f82241b',
-    messagingSenderId: '775815644930',
-    projectId: 'dairydelivery-99f70',
-    storageBucket: 'dairydelivery-99f70.firebasestorage.app',
-    iosBundleId: 'com.example.dairyDelivery',
+    piKey: '<FIREBASE_API_KEY>',
+    appId: '<FIREBASE_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    authDomain: '<FIREBASE_AUTH_DOMAIN>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>'
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDUzLmMcbWCq0kZt-SHjtbD3Hqmxf3zRKY',
-    appId: '1:775815644930:web:261cd4311589f9f782241b',
-    messagingSenderId: '775815644930',
-    projectId: 'dairydelivery-99f70',
-    authDomain: 'dairydelivery-99f70.firebaseapp.com',
-    storageBucket: 'dairydelivery-99f70.firebasestorage.app',
+    piKey: '<FIREBASE_API_KEY>',
+    appId: '<FIREBASE_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    authDomain: '<FIREBASE_AUTH_DOMAIN>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>'
   );
 
 }
