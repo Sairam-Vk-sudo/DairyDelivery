@@ -41,12 +41,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDUzLmMcbWCq0kZt-SHjtbD3Hqmxf3zRKY',
-    appId: '1:775815644930:web:77a41d94f45017ea82241b',
-    messagingSenderId: '775815644930',
-    projectId: 'dairydelivery-99f70',
-    authDomain: 'dairydelivery-99f70.firebaseapp.com',
-    storageBucket: 'dairydelivery-99f70.firebasestorage.app',
+    apiKey: '<FIREBASE_API_KEY>',
+    appId: '<FIREBASE_APP_ID>',
+    messagingSenderId: '<FIREBASE_MESSAGING_SENDER_ID>',
+    projectId: '<FIREBASE_PROJECT_ID>',
+    authDomain: '<FIREBASE_AUTH_DOMAIN>',
+    storageBucket: '<FIREBASE_STORAGE_BUCKET>',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
