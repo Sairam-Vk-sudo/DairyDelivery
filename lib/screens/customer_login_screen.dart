@@ -1,99 +1,217 @@
+import 'package:dairy_delivery_3/screens/main_screen.dart';
 import 'package:flutter/material.dart';
-import 'home_screen.dart'; // Import HomeScreen
+import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/custom_button.dart';
+import 'signup_screen.dart';
+import 'home_screen.dart';
 
 class CustomerLoginScreen extends StatefulWidget {
   const CustomerLoginScreen({super.key});
 
   @override
-  State<CustomerLoginScreen> createState() => _CustomerLoginScreenState();
+  _CustomerLoginScreenState createState() => _CustomerLoginScreenState();
 }
 
 class _CustomerLoginScreenState extends State<CustomerLoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool isLoading = false;
 
-  void _handleLogin() {
-    String email = _emailController.text;
-    String password = _passwordController.text;
+  void loginUser() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email and Password are required")),
+      );
+      return;
+    }
 
-    Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+    setState(() => isLoading = true);
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
 
-    // Validate credentials (you can add real authentication logic here)
-    // if (email.isNotEmpty && password.isNotEmpty) {
-    //   Navigator.pushReplacement(
-    //     context,
-    //     MaterialPageRoute(builder: (context) => const HomeScreen()),
-    //   );
-    // } else {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(content: Text("Please enter email and password")),
-    //   );
-    // }
+      User? user = userCredential.user;
+      if (user != null) {
+        if (!user.emailVerified) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Email not verified. Please check your inbox.",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          );
+
+          await user.sendEmailVerification();
+          setState(() => isLoading = false);
+          return;
+        }
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => MainScreen()),
+        );
+      }
+    } catch (e) {
+      String errorMessage = "Login Failed. Please try again.";
+
+      if (e.toString().contains('user-not-found')) {
+        errorMessage = "No user found for this email.";
+      } else if (e.toString().contains('wrong-password')) {
+        errorMessage = "Incorrect password. Please try again.";
+      } else if (e.toString().contains('network-request-failed')) {
+        errorMessage = "Network error. Check your internet connection.";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorMessage)),
+      );
+    }
+    setState(() => isLoading = false);
+  }
+
+  void resetPassword() async {
+    if (emailController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter your email to reset password")),
+      );
+      return;
+    }
+
+    try {
+      await _auth.sendPasswordResetEmail(email: emailController.text.trim());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Password reset email sent. Check your inbox."),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.toString()}")),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Customer Login", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue,
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Login to your account",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue),
-            ),
-            const SizedBox(height: 20),
-
-            // Email Field
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: "Email",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                prefixIcon: const Icon(Icons.email, color: Colors.blue),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            // Password Field
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                labelText: "Password",
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                prefixIcon: const Icon(Icons.lock, color: Colors.blue),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Login Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center, // ✅ Ensures everything is centered
+              children: [
+                // ✅ Logo
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.blue, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade300,
+                        blurRadius: 8,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                    image: const DecorationImage(
+                      image: AssetImage('assets/images/logo.jpg'), // ✅ Ensure this image exists
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
-                child: const Text("Login", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
+
+                const SizedBox(height: 30),
+
+                const Text(
+                  "Welcome to Dairy Delivery",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                const Text(
+                  "Enter your email & password to continue",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ✅ Email TextField
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: "Email",
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // ✅ Password TextField
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: "Password",
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: resetPassword,
+                    child: const Text(
+                      "Forgot Password?",
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // ✅ Login Button
+                isLoading
+                    ? const CircularProgressIndicator()
+                    : CustomButton(
+                  text: "Login",
+                  onPressed: loginUser,
+                ),
+
+                const SizedBox(height: 10),
+
+                TextButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignupScreen()),
+                  ),
+                  child: const Text("Don't have an account? Sign up"),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

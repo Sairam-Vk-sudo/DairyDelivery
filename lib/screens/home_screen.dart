@@ -4,12 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../widgets/subscription_box.dart';
-import '../components/bottom_nav.dart';
-import 'products_page.dart';
-import 'login_screen.dart'; // Ensure this exists
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback onViewProducts;
+
+  const HomeScreen({Key? key, required this.onViewProducts}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -18,10 +18,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final PageController _pageController = PageController();
-  
+
   String username = "Guest";
   bool hasSubscription = false;
   String subscriptionName = "";
+
+  final List<Map<String, String>> offers = [
+    {"title": "20% Off on Paneer", "image": "assets/images/paneer_offer.webp"},
+    {"title": "Buy 2 Get 1 Free - Milk", "image": "assets/images/milk_offer.webp"},
+    {"title": "10% Off on Cheese", "image": "assets/images/cheese_offer.jpg"},
+  ];
 
   @override
   void initState() {
@@ -29,14 +35,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchUserData();
   }
 
-  /// Fetch user details including username and subscription details
   Future<void> _fetchUserData() async {
     User? user = _auth.currentUser;
     if (user != null) {
       DocumentSnapshot<Map<String, dynamic>> userDoc =
-          await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
+      await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
 
-      if (userDoc.exists && mounted) {  
+      if (userDoc.exists && mounted) {
         setState(() {
           username = userDoc.data()?["name"] ?? "Customer";
           hasSubscription = userDoc.data()?["hasSubscription"] ?? false;
@@ -46,108 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Logout function
-  void _logout() async {
-    await _auth.signOut();
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()), // Ensure LoginScreen exists
-      );
-    }
-  }
-
-  /// Open the subscription selection dialog
-  void _handleSubscriptionUpdate() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        String selectedPackage = "Package 1 (Monthly Milk)";
-        DateTime? selectedDate;
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text("Choose Subscription Plan"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: selectedPackage,
-                    items: [
-                      "Package 1 (Monthly Milk)",
-                      "Package 2 (Quarterly Milk)",
-                      "Package 3 (Annual Milk)"
-                    ].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        selectedPackage = newValue!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: () async {
-                      DateTime? picked = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          selectedDate = picked;
-                        });
-                      }
-                    },
-                    child: Text(selectedDate == null
-                        ? "Select Start Date"
-                        : "Selected Date: ${selectedDate!.toLocal()}".split(' ')[0]),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    User? user = _auth.currentUser;
-                    if (user != null) {
-                      await FirebaseFirestore.instance.collection("users").doc(user.uid).update({
-                        "hasSubscription": true,
-                        "subscriptionName": selectedPackage,
-                      });
-                      setState(() {
-                        hasSubscription = true;
-                        subscriptionName = selectedPackage;
-                      });
-                    }
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Confirm"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          "Customer Home",
+          "DairyDelivery",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.blue,
@@ -168,41 +78,88 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _buildWelcomeCard(),
             const SizedBox(height: 20),
-            SubscriptionBox(
-              hasActiveSubscription: hasSubscription,
-              subscriptionName: subscriptionName,
-              onEditAdd: _handleSubscriptionUpdate,
-            ),
-            const SizedBox(height: 20),
+            _buildSectionTitle("Exclusive Offers"),
             _buildMarqueeSlider(),
-            const SizedBox(height: 20),
-            _buildSectionTitle("Offers"),
-            _buildOffers(),
             const SizedBox(height: 20),
             _buildSectionTitle("Our Products"),
             _buildProducts(),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ProductsPage()),
-            );
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.category), label: "Products"),
+    );
+  }
+
+  Widget _buildMarqueeSlider() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 140,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: offers.length,
+            itemBuilder: (context, index) {
+              return _buildMarqueeItem(offers[index]["image"]!, offers[index]["title"]!);
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        SmoothPageIndicator(
+          controller: _pageController,
+          count: offers.length,
+          effect: const WormEffect(
+            dotHeight: 8,
+            dotWidth: 8,
+            activeDotColor: Colors.blue,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMarqueeItem(String imagePath, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.cover,
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: 140,
+            ),
+          ),
+          Positioned(
+            bottom: 10,
+            left: 10,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  /// Build welcome card
+  void _logout() async {
+    await _auth.signOut();
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
+  }
+
   Widget _buildWelcomeCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -231,65 +188,17 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
-          ElevatedButton(
-            onPressed: _handleSubscriptionUpdate,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-            child: const Text("Edit/Add"),
-          ),
         ],
       ),
     );
   }
 
-  /// Build Marquee Slider
-  Widget _buildMarqueeSlider() {
-    return Column(
-      children: [
-        SizedBox(
-          height: 120,
-          child: PageView(
-            controller: _pageController,
-            children: List.generate(
-              3,
-              (index) => _buildMarqueeItem("assets/images/test.jpg"),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        SmoothPageIndicator(
-          controller: _pageController,
-          count: 3,
-          effect: const WormEffect(
-            dotHeight: 8,
-            dotWidth: 8,
-            activeDotColor: Colors.blue,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMarqueeItem(String imagePath) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.cover,
-          width: MediaQuery.of(context).size.width * 0.8,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOffers() => _buildMarqueeSlider();
-
   Widget _buildProducts() {
     return ElevatedButton(
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ProductsPage()),
+      onPressed: widget.onViewProducts,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blueAccent,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       ),
       child: const Text("View Products"),
     );

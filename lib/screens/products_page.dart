@@ -11,12 +11,42 @@ class _ProductsPageState extends State<ProductsPage> {
   List<Map<String, dynamic>> cartItems = [];
 
   final List<Map<String, dynamic>> products = [
-    {"name": "Fresh Milk", "image": "assets/images/test.jpg", "price": 50, "unit": "/L", "quantity": "Select"},
-    {"name": "Cheddar Cheese", "image": "assets/images/test.jpg", "price": 300, "unit": "/kg", "quantity": "Select"},
-    {"name": "Organic Butter", "image": "assets/images/test.jpg", "price": 250, "unit": "/kg", "quantity": "Select"},
-    {"name": "Greek Yogurt", "image": "assets/images/test.jpg", "price": 200, "unit": "/kg", "quantity": "Select"},
-    {"name": "Homemade Paneer", "image": "assets/images/test.jpg", "price": 400, "unit": "/kg", "quantity": "Select"},
+    {"name": "Fresh Milk", "image": "assets/images/milk.webp", "price": 50, "unit": "/L", "quantity": "Select"},
+    {"name": "Cheddar Cheese", "image": "assets/images/cheese.webp", "price": 300, "unit": "/kg", "quantity": "Select"},
+    {"name": "Organic Butter", "image": "assets/images/butter.webp", "price": 250, "unit": "/kg", "quantity": "Select"},
+    {"name": "Greek Yogurt", "image": "assets/images/yogurt.webp", "price": 200, "unit": "/kg", "quantity": "Select"},
+    {"name": "Homemade Paneer", "image": "assets/images/paneer.webp", "price": 400, "unit": "/kg", "quantity": "Select"},
   ];
+
+  List<Map<String, dynamic>> _filteredProducts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredProducts = List.from(products);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+
+    setState(() {
+      if (query.isEmpty) {
+        _filteredProducts = List.from(products);
+      } else {
+        _filteredProducts = products.where((product) {
+          final name = product["name"].toString().toLowerCase();
+          return name.contains(query);
+        }).toList();
+      }
+    });
+  }
 
   void _showQuantityDialog(int index) {
     TextEditingController quantityController = TextEditingController();
@@ -36,20 +66,22 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context), // Close dialog
+              onPressed: () => Navigator.pop(context),
               child: Text("Cancel"),
             ),
             TextButton(
               onPressed: () {
                 String input = quantityController.text;
-                if (RegExp(r'^\d*\.?\d*$').hasMatch(input) && input.isNotEmpty) {
+                double? quantity = double.tryParse(input);
+
+                if (quantity != null && quantity > 0) {
                   setState(() {
-                    products[index]["quantity"] = input;
+                    products[index]["quantity"] = quantity.toString();
                   });
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Please enter a valid quantity")),
+                    SnackBar(content: Text("Please enter a valid quantity greater than 0")),
                   );
                 }
               },
@@ -81,6 +113,11 @@ class _ProductsPageState extends State<ProductsPage> {
     }
   }
 
+  // Counts number of distinct items in cart
+  int getTotalCartItems() {
+    return cartItems.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,16 +143,20 @@ class _ProductsPageState extends State<ProductsPage> {
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.all(10),
+        padding: EdgeInsets.only(bottom: cartItems.isNotEmpty ? 60 : 0),
         child: GridView.builder(
-          itemCount: products.length,
+          itemCount: _filteredProducts.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, 
+            crossAxisCount: 2,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
             childAspectRatio: 0.8,
           ),
           itemBuilder: (context, index) {
+            final product = _filteredProducts[index];
+            // Find the index in original products list for quantity dialog
+            final indexInOriginal = products.indexWhere((p) => p["name"] == product["name"]);
+
             return Card(
               elevation: 3,
               shape: RoundedRectangleBorder(
@@ -125,7 +166,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 children: [
                   Expanded(
                     child: Image.asset(
-                      products[index]["image"],
+                      product["image"],
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -133,20 +174,17 @@ class _ProductsPageState extends State<ProductsPage> {
                     padding: EdgeInsets.all(8),
                     child: Column(
                       children: [
-                        Text(products[index]["name"], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        Text("₹${products[index]["price"]} ${products[index]["unit"]}", style: TextStyle(color: Colors.grey)),
+                        Text(product["name"], style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text("₹${product["price"]} ${product["unit"]}", style: TextStyle(color: Colors.grey)),
                         SizedBox(height: 5),
-
-                        // Select Quantity Button
                         ElevatedButton(
-                          onPressed: () => _showQuantityDialog(index),
-                          child: Text(products[index]["quantity"]),
+                          onPressed: () => _showQuantityDialog(indexInOriginal),
+                          child: Text(product["quantity"]),
                         ),
-
                         SizedBox(height: 10),
                         ElevatedButton(
                           onPressed: () {
-                            addToCart(products[index]);
+                            addToCart(product);
                           },
                           child: Text("Add to Cart"),
                         ),
@@ -159,6 +197,35 @@ class _ProductsPageState extends State<ProductsPage> {
           },
         ),
       ),
+      bottomNavigationBar: cartItems.isNotEmpty
+          ? Container(
+        color: Colors.blueAccent,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Items in Cart: ${getTotalCartItems()}",
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => CartPage(cartItems: cartItems)),
+                );
+              },
+              icon: Icon(Icons.shopping_cart),
+              label: Text("Go to Cart"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.blueAccent,
+              ),
+            ),
+          ],
+        ),
+      )
+          : null,
     );
   }
 }

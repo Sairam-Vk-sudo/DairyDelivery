@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 
-class SubscriptionBox extends StatelessWidget {
-  final bool hasActiveSubscription;
-  final String subscriptionName;
-  final VoidCallback onEditAdd;
+class WelcomeBox extends StatelessWidget {
+  final String username;
 
-  const SubscriptionBox({
+  const WelcomeBox({
     super.key,
-    required this.hasActiveSubscription,
-    required this.subscriptionName,
-    required this.onEditAdd,
+    required this.username,
   });
 
   @override
@@ -23,30 +19,16 @@ class SubscriptionBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                hasActiveSubscription ? "Active Subscription" : "No Active Subscription",
-                style: TextStyle(
-                  color: hasActiveSubscription ? Colors.green : Colors.red,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subscriptionName.isNotEmpty ? subscriptionName : "<Subscription>",
-                style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
-              ),
-            ],
-          ),
-          TextButton(
-            onPressed: onEditAdd,
-            style: TextButton.styleFrom(foregroundColor: Colors.blue),
-            child: Text(hasActiveSubscription ? "Edit" : "Add"),
+          const Icon(Icons.person, color: Colors.blue, size: 28),
+          const SizedBox(width: 10),
+          Text(
+            "Welcome, $username",
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
           ),
         ],
       ),

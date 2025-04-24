@@ -1,4 +1,9 @@
+import 'package:dairy_delivery_3/screens/main_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:uuid/uuid.dart';
+// import 'home_screen.dart'
 
 class PayNowPage extends StatelessWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -13,16 +18,75 @@ class PayNowPage extends StatelessWidget {
     required this.deliveryTime,
   });
 
+  // Calculate total order amount
   double calculateTotal() {
-    return cartItems.fold(0, (total, item) {
-      double price = (item["price"] ?? 0).toDouble();
-      int quantity = (item["quantity"] ?? 1).toInt();
+    return cartItems.fold(0.0, (total, item) {
+      double price = (item["price"] as num).toDouble();
+      double quantity = (item["quantity"] as num).toDouble();
       return total + (price * quantity);
     });
   }
 
-  int calculateTotalItems() {
-    return cartItems.fold(0, (total, item) => total + ((item["quantity"] ?? 1) as int));
+  // Calculate total number of items
+  double calculateTotalItems() {
+    return cartItems.fold(0.0, (total, item) {
+      double quantity = (item["quantity"] as num).toDouble();
+      return total + quantity;
+    });
+  }
+
+  // Function to save order in Firebase Firestore
+  void saveOrder(BuildContext context) async {
+    String orderId = Uuid().v4(); // Generate unique order ID
+    String userId = FirebaseAuth.instance.currentUser!.uid; // Get current user ID
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    Map<String, dynamic> orderData = {
+      "orderId": orderId,
+      "userId": userId,
+      "items": cartItems.map((item) => {
+        "name": item["name"],
+        "price": item["price"],
+        "quantity": item["quantity"]
+      }).toList(),
+      "totalAmount": calculateTotal(),
+      "totalItems": calculateTotalItems(),
+      "address": address,
+      "deliveryDate": deliveryDate,
+      "deliveryTime": deliveryTime,
+      "status": "Pending",
+      "timestamp": FieldValue.serverTimestamp()
+    };
+
+    try {
+      await firestore
+          .collection("users")
+          .doc(userId)
+          .collection("orders")
+          .doc(orderId)
+          .set(orderData);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Order Confirmed! 🎉"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => MainScreen()),
+            (route) => false,
+      );
+      // Navigate back after order placement
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Order failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -38,9 +102,8 @@ class PayNowPage extends StatelessWidget {
                 itemCount: cartItems.length,
                 itemBuilder: (context, index) {
                   var item = cartItems[index];
-
-                  double price = (item["price"] ?? 0).toDouble();
-                  int quantity = (item["quantity"] ?? 1).toInt();
+                  double price = (item["price"] as num).toDouble();
+                  double quantity = (item["quantity"] as num).toDouble();
                   double totalPrice = price * quantity;
 
                   return Card(
@@ -49,10 +112,13 @@ class PayNowPage extends StatelessWidget {
                     child: ListTile(
                       leading: CircleAvatar(
                         backgroundColor: Colors.blueAccent,
-                        child: Text(quantity.toString(), style: TextStyle(color: Colors.white)),
+                        child: Text(quantity.toStringAsFixed(1),
+                            style: TextStyle(color: Colors.white, fontSize: 14)),
                       ),
                       title: Text(item["name"], style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("₹${price.toStringAsFixed(2)} x $quantity = ₹${totalPrice.toStringAsFixed(2)}"),
+                      subtitle: Text(
+                        "₹${price.toStringAsFixed(2)} x ${quantity.toStringAsFixed(1)} = ₹${totalPrice.toStringAsFixed(2)}",
+                      ),
                     ),
                   );
                 },
@@ -63,11 +129,15 @@ class PayNowPage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Column(
                 children: [
-                  Text("Total Items: ${calculateTotalItems()}",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                  Text(
+                    "Total Items: ${calculateTotalItems().toStringAsFixed(1)}",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
                   SizedBox(height: 5),
-                  Text("Total Amount: ₹${calculateTotal().toStringAsFixed(2)}",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green)),
+                  Text(
+                    "Total Amount: ₹${calculateTotal().toStringAsFixed(2)}",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.green),
+                  ),
                   SizedBox(height: 10),
                   Text("Address: $address", style: TextStyle(fontSize: 16)),
                   Text("Delivery Date: $deliveryDate", style: TextStyle(fontSize: 16)),
@@ -77,15 +147,7 @@ class PayNowPage extends StatelessWidget {
             ),
             SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text("Order Confirmed!"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-                Navigator.pop(context);
-              },
+              onPressed: () => saveOrder(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent,
                 padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),

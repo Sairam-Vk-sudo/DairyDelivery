@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import '../widgets/custom_button.dart';
 import 'login_screen.dart';
+import 'package:geocoding/geocoding.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -30,10 +31,28 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _fetchLocation() async {
     try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() {
+          location = "Location permission denied";
+        });
+        return;
+      }
+
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+          position.latitude, position.longitude);
+
+      Placemark place = placemarks[0];
       setState(() {
-        location = "${position.latitude}, ${position.longitude}";
+        location =
+        "${place.street}, ${place.locality}, ${place.administrativeArea}, ${place.country}";
       });
     } catch (e) {
       setState(() {
@@ -41,6 +60,7 @@ class _SignupScreenState extends State<SignupScreen> {
       });
     }
   }
+
 
   void registerUser() async {
     if (nameController.text.isEmpty ||
@@ -56,7 +76,7 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => isLoading = true);
     try {
       UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+      await _auth.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
@@ -204,9 +224,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 isLoading
                     ? const CircularProgressIndicator()
                     : CustomButton(
-                        text: "Sign Up",
-                        onPressed: registerUser,
-                      ),
+                  text: "Sign Up",
+                  onPressed: registerUser,
+                ),
 
                 const SizedBox(height: 10),
 

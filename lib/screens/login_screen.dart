@@ -1,3 +1,4 @@
+import 'package:dairy_delivery_3/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/custom_button.dart';
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Successful login
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
       }
     } catch (e) {
@@ -191,9 +192,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 isLoading
                     ? const CircularProgressIndicator()
                     : CustomButton(
-                        text: "Login",
-                        onPressed: loginUser,
-                      ),
+                  text: "Login",
+                  onPressed: loginUser,
+                ),
 
                 const SizedBox(height: 10),
 

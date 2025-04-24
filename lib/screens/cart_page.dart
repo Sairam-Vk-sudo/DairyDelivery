@@ -12,27 +12,37 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  late List<Map<String, dynamic>> _localCartItems;
   TextEditingController _addressController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   List<TimeOfDay> availableTimeSlots = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _localCartItems = List<Map<String, dynamic>>.from(widget.cartItems);
+  }
+
   void removeFromCart(int index) {
     setState(() {
-      widget.cartItems.removeAt(index);
+      _localCartItems.removeAt(index);
     });
   }
 
   double calculateTotal() {
-    return widget.cartItems.fold(0, (total, item) {
-      double price = item["price"] ?? 0;
-      int quantity = int.tryParse(item["quantity"].toString()) ?? 1;
+    return _localCartItems.fold(0.0, (total, item) {
+      double price = (item["price"] as num).toDouble();
+      double quantity = (item["quantity"] as num).toDouble();
       return total + (price * quantity);
     });
   }
 
-  int calculateTotalItems() {
-    return widget.cartItems.fold(0, (total, item) => total + ((item["quantity"] ?? 1) as int));
+  double calculateTotalItems() {
+    return _localCartItems.fold(0.0, (total, item) {
+      double quantity = (item["quantity"] as num).toDouble();
+      return total + quantity;
+    });
   }
 
   void _pickDate() async {
@@ -76,9 +86,9 @@ class _CartPageState extends State<CartPage> {
           title: Text("Select Delivery Time"),
           children: availableTimeSlots
               .map((time) => SimpleDialogOption(
-                    child: Text(time.format(context)),
-                    onPressed: () => Navigator.pop(context, time),
-                  ))
+            child: Text(time.format(context)),
+            onPressed: () => Navigator.pop(context, time),
+          ))
               .toList(),
         );
       },
@@ -109,7 +119,7 @@ class _CartPageState extends State<CartPage> {
       context,
       MaterialPageRoute(
         builder: (context) => PayNowPage(
-          cartItems: widget.cartItems,
+          cartItems: _localCartItems,
           address: _addressController.text,
           deliveryDate: DateFormat('yyyy-MM-dd').format(_selectedDate!),
           deliveryTime: _selectedTime!.format(context),
@@ -124,107 +134,103 @@ class _CartPageState extends State<CartPage> {
       appBar: AppBar(title: Text("Cart")),
       body: Padding(
         padding: EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: widget.cartItems.length,
-                itemBuilder: (context, index) {
-                  var item = widget.cartItems[index];
-                  double price = item["price"] ?? 0;
-                  int quantity = int.tryParse(item["quantity"].toString()) ?? 1;
-                  double totalPrice = price * quantity;
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.4,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: _localCartItems.length,
+                  itemBuilder: (context, index) {
+                    var item = _localCartItems[index];
+                    double price = (item["price"] as num).toDouble();
+                    double quantity = (item["quantity"] as num).toDouble();
+                    double totalPrice = price * quantity;
 
-                  return Card(
-                    margin: EdgeInsets.symmetric(vertical: 8),
-                    elevation: 3,
-                    child: ListTile(
-                      leading: Image.asset(item["image"], width: 50, height: 50),
-                      title: Text(item["name"], style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("₹${price.toStringAsFixed(2)} x $quantity = ₹${totalPrice.toStringAsFixed(2)}"),
-                      trailing: IconButton(
-                        icon: Icon(Icons.remove_circle, color: Colors.red),
-                        onPressed: () => removeFromCart(index),
+                    return Card(
+                      margin: EdgeInsets.symmetric(vertical: 8),
+                      elevation: 3,
+                      child: ListTile(
+                        leading: Image.asset(item["image"], width: 50, height: 50),
+                        title: Text(item["name"], style: TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text("₹${price.toStringAsFixed(2)} x ${quantity.toStringAsFixed(1)} = ₹${totalPrice.toStringAsFixed(2)}"),
+                        trailing: IconButton(
+                          icon: Icon(Icons.remove_circle, color: Colors.red),
+                          onPressed: () => removeFromCart(index),
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-
-            Divider(thickness: 2),
-
-            /// **Delivery Details Section**
-            Card(
-              margin: EdgeInsets.symmetric(vertical: 10),
-              elevation: 3,
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
+              Divider(thickness: 2),
+              Card(
+                margin: EdgeInsets.symmetric(vertical: 10),
+                elevation: 3,
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
+                        controller: _addressController,
+                        decoration: InputDecoration(
+                          labelText: "Delivery Address",
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.location_on),
+                        ),
+                      ),
+                      SizedBox(height: 15),
+                      ListTile(
+                        leading: Icon(Icons.calendar_today, color: Colors.blue),
+                        title: Text(
+                          _selectedDate == null
+                              ? "Select Delivery Date"
+                              : "Delivery Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate!)}",
+                        ),
+                        trailing: Icon(Icons.arrow_forward_ios, size: 18),
+                        onTap: _pickDate,
+                      ),
+                      ListTile(
+                        leading: Icon(Icons.access_time, color: Colors.blue),
+                        title: Text(
+                          _selectedTime == null
+                              ? "Select Delivery Time"
+                              : "Delivery Time: ${_selectedTime!.format(context)}",
+                        ),
+                        trailing: Icon(Icons.arrow_forward_ios, size: 18),
+                        onTap: _pickTime,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 15),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// **Address Field**
-                    TextField(
-                      controller: _addressController,
-                      decoration: InputDecoration(
-                        labelText: "Delivery Address",
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on),
-                      ),
+                    Text(
+                      "Total: ₹${calculateTotal().toStringAsFixed(2)}",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
                     ),
-                    SizedBox(height: 15),
-
-                    /// **Select Delivery Date**
-                    ListTile(
-                      leading: Icon(Icons.calendar_today, color: Colors.blue),
-                      title: Text(
-                        _selectedDate == null
-                            ? "Select Delivery Date"
-                            : "Delivery Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate!)}",
+                    SizedBox(height: 10),
+                    ElevatedButton.icon(
+                      onPressed: _proceedToPay,
+                      icon: Icon(Icons.payment),
+                      label: Text("Proceed to Pay", style: TextStyle(fontSize: 18)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
                       ),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 18),
-                      onTap: _pickDate,
-                    ),
-
-                    /// **Select Delivery Time**
-                    ListTile(
-                      leading: Icon(Icons.access_time, color: Colors.blue),
-                      title: Text(
-                        _selectedTime == null
-                            ? "Select Delivery Time"
-                            : "Delivery Time: ${_selectedTime!.format(context)}",
-                      ),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 18),
-                      onTap: _pickTime,
                     ),
                   ],
                 ),
               ),
-            ),
-
-            /// **Total Amount & Proceed Button**
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 15),
-              child: Column(
-                children: [
-                  Text(
-                    "Total: ₹${calculateTotal().toStringAsFixed(2)}",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green),
-                  ),
-                  SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    onPressed: _proceedToPay,
-                    icon: Icon(Icons.payment),
-                    label: Text("Proceed to Pay", style: TextStyle(fontSize: 18)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 40),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

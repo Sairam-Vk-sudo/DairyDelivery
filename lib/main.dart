@@ -1,11 +1,12 @@
+import 'package:dairy_delivery_3/screens/main_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'screens/customer_login_screen.dart'; // ✅ Updated import
 import 'screens/home_screen.dart';
-import 'screens/login_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Ensures Flutter is initialized before Firebase
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -25,8 +26,8 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const LoginScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/': (context) => const CustomerLoginScreen(), // ✅ Updated to CustomerLoginScreen
+        '/main': (context) => MainScreen(),
       },
     );
   }
