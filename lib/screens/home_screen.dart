@@ -4,12 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../widgets/subscription_box.dart';
-import '../components/bottom_nav.dart';
-import 'products_page.dart';
-import 'login_screen.dart'; // Ensure this exists
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback onViewProducts;
+
+  const HomeScreen({Key? key, required this.onViewProducts}) : super(key: key);
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -23,7 +23,6 @@ class _HomeScreenState extends State<HomeScreen> {
   bool hasSubscription = false;
   String subscriptionName = "";
 
-  // 🔹 List of offers
   final List<Map<String, String>> offers = [
     {"title": "20% Off on Paneer", "image": "assets/images/paneer_offer.webp"},
     {"title": "Buy 2 Get 1 Free - Milk", "image": "assets/images/milk_offer.webp"},
@@ -36,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchUserData();
   }
 
-  /// Fetch user details including username and subscription details
   Future<void> _fetchUserData() async {
     User? user = _auth.currentUser;
     if (user != null) {
@@ -78,35 +76,19 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            WelcomeBox(username: username),
+            _buildWelcomeCard(),
             const SizedBox(height: 20),
             _buildSectionTitle("Exclusive Offers"),
-            _buildMarqueeSlider(), // 🔹 Updated to use offers list
+            _buildMarqueeSlider(),
             const SizedBox(height: 20),
             _buildSectionTitle("Our Products"),
             _buildProducts(),
           ],
         ),
       ),
-      // bottomNavigationBar: BottomNavigationBar(
-      //   currentIndex: 0,
-      //   onTap: (index) {
-      //     if (index == 1) {
-      //       Navigator.push(
-      //         context,
-      //         MaterialPageRoute(builder: (context) => ProductsPage()),
-      //       );
-      //     }
-      //   },
-      //   items: const [
-      //     BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-      //     BottomNavigationBarItem(icon: Icon(Icons.category), label: "Products"),
-      //   ],
-      // ),
     );
   }
 
-  /// Build Marquee Slider for Offers
   Widget _buildMarqueeSlider() {
     return Column(
       children: [
@@ -134,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Build Offer Item for Marquee
   Widget _buildMarqueeItem(String imagePath, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -169,7 +150,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Logout function
   void _logout() async {
     await _auth.signOut();
     if (mounted) {
@@ -180,7 +160,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Build welcome card
   Widget _buildWelcomeCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -216,9 +195,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProducts() {
     return ElevatedButton(
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ProductsPage()),
+      onPressed: widget.onViewProducts,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blueAccent,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       ),
       child: const Text("View Products"),
     );

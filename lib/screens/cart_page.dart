@@ -12,34 +12,38 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
+  late List<Map<String, dynamic>> _localCartItems;
   TextEditingController _addressController = TextEditingController();
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   List<TimeOfDay> availableTimeSlots = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _localCartItems = List<Map<String, dynamic>>.from(widget.cartItems);
+  }
+
   void removeFromCart(int index) {
     setState(() {
-      widget.cartItems.removeAt(index);
+      _localCartItems.removeAt(index);
     });
   }
 
   double calculateTotal() {
-    return widget.cartItems.fold(0.0, (total, item) {
+    return _localCartItems.fold(0.0, (total, item) {
       double price = (item["price"] as num).toDouble();
-      double quantity = (item["quantity"] as num).toDouble(); // ✅ Ensures `quantity` is always a double
+      double quantity = (item["quantity"] as num).toDouble();
       return total + (price * quantity);
     });
   }
 
-
-  int calculateTotalItems() {
-    return widget.cartItems.fold(0, (total, item) {
-      int quantity = (item["quantity"] as num).toInt(); // ✅ Ensures quantity is always an int
+  double calculateTotalItems() {
+    return _localCartItems.fold(0.0, (total, item) {
+      double quantity = (item["quantity"] as num).toDouble();
       return total + quantity;
     });
   }
-
-
 
   void _pickDate() async {
     DateTime now = DateTime.now();
@@ -115,7 +119,7 @@ class _CartPageState extends State<CartPage> {
       context,
       MaterialPageRoute(
         builder: (context) => PayNowPage(
-          cartItems: widget.cartItems,
+          cartItems: _localCartItems,
           address: _addressController.text,
           deliveryDate: DateFormat('yyyy-MM-dd').format(_selectedDate!),
           deliveryTime: _selectedTime!.format(context),
@@ -132,18 +136,18 @@ class _CartPageState extends State<CartPage> {
         padding: EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
-            mainAxisSize: MainAxisSize.min, // Allows flexible height
+            mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
-                height: MediaQuery.of(context).size.height * 0.4, // Adjust list height
+                height: MediaQuery.of(context).size.height * 0.4,
                 child: ListView.builder(
-                  shrinkWrap: true, // Important to prevent overflow
-                  physics: NeverScrollableScrollPhysics(), // Prevent double scrolling
-                  itemCount: widget.cartItems.length,
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: _localCartItems.length,
                   itemBuilder: (context, index) {
-                    var item = widget.cartItems[index];
+                    var item = _localCartItems[index];
                     double price = (item["price"] as num).toDouble();
-                    int quantity = (item["quantity"] as num).toInt();
+                    double quantity = (item["quantity"] as num).toDouble();
                     double totalPrice = price * quantity;
 
                     return Card(
@@ -152,7 +156,7 @@ class _CartPageState extends State<CartPage> {
                       child: ListTile(
                         leading: Image.asset(item["image"], width: 50, height: 50),
                         title: Text(item["name"], style: TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text("₹${price.toStringAsFixed(2)} x $quantity = ₹${totalPrice.toStringAsFixed(2)}"),
+                        subtitle: Text("₹${price.toStringAsFixed(2)} x ${quantity.toStringAsFixed(1)} = ₹${totalPrice.toStringAsFixed(2)}"),
                         trailing: IconButton(
                           icon: Icon(Icons.remove_circle, color: Colors.red),
                           onPressed: () => removeFromCart(index),
@@ -162,10 +166,7 @@ class _CartPageState extends State<CartPage> {
                   },
                 ),
               ),
-
               Divider(thickness: 2),
-
-              /// **Delivery Details Section**
               Card(
                 margin: EdgeInsets.symmetric(vertical: 10),
                 elevation: 3,
@@ -174,7 +175,6 @@ class _CartPageState extends State<CartPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// **Address Field**
                       TextField(
                         controller: _addressController,
                         decoration: InputDecoration(
@@ -184,8 +184,6 @@ class _CartPageState extends State<CartPage> {
                         ),
                       ),
                       SizedBox(height: 15),
-
-                      /// **Select Delivery Date**
                       ListTile(
                         leading: Icon(Icons.calendar_today, color: Colors.blue),
                         title: Text(
@@ -196,8 +194,6 @@ class _CartPageState extends State<CartPage> {
                         trailing: Icon(Icons.arrow_forward_ios, size: 18),
                         onTap: _pickDate,
                       ),
-
-                      /// **Select Delivery Time**
                       ListTile(
                         leading: Icon(Icons.access_time, color: Colors.blue),
                         title: Text(
@@ -212,8 +208,6 @@ class _CartPageState extends State<CartPage> {
                   ),
                 ),
               ),
-
-              /// **Total Amount & Proceed Button**
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 15),
                 child: Column(
@@ -239,7 +233,6 @@ class _CartPageState extends State<CartPage> {
           ),
         ),
       ),
-
     );
   }
 }

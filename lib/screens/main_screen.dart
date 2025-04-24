@@ -1,36 +1,33 @@
-import 'package:dairy_delivery_3/screens/customer_login_screen.dart';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'products_page.dart';
 import 'profile_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
   @override
-  _MainScreenState createState() => _MainScreenState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  late List<Widget> _pages;
 
-  final List<Widget> _pages = [
-    HomeScreen(),
-    ProductsPage(),
-    ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeScreen(onViewProducts: () => _onItemTapped(1)),
+      ProductsPage(),
+      ProfileScreen(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
-  }
-
-  void _logout() async {
-    await FirebaseAuth.instance.signOut();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => CustomerLoginScreen()), // ✅ Redirect to login
-    );
   }
 
   @override
@@ -40,16 +37,13 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: "Products"),
-          BottomNavigationBarItem(icon: Icon(Icons.more_vert), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.local_grocery_store), label: "Products"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _logout,
-        child: Icon(Icons.logout),
-        backgroundColor: Colors.red,
       ),
     );
   }

@@ -31,15 +31,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
         email = user!.email ?? "No email";
       });
 
-      DocumentSnapshot userData = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user!.uid)
-          .get();
+      try {
+        DocumentSnapshot<Map<String, dynamic>> userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
 
-      if (userData.exists) {
+        if (userDoc.exists) {
+          final data = userDoc.data();
+          if (data != null && data.containsKey('name')) {
+            setState(() {
+              name = data['name'];
+            });
+          } else {
+            setState(() {
+              name = "No name found";
+            });
+          }
+        } else {
+          setState(() {
+            name = "User document not found";
+          });
+        }
+      } catch (e) {
         setState(() {
-          name = userData['name'] ?? "No Name";
+          name = "Error loading name";
         });
+        print("Firestore error: $e");
       }
     }
   }
